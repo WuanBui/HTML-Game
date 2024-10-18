@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shooting Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            background-color: #000;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Player setup
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height - 50,
+            width: 30,
+            height: 30,
+            speed: 5,
+            bullets: [],
+            isShooting: false
+        };
+
+        // Enemy setup
+        const enemies = [];
+        const enemySpeed = 2;
+
+        // Bullet setup
+        const bulletSpeed = 7;
+
+        // Control player movement and shooting
+        let keys = {};
+        document.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+        });
+        document.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+        });
+
+        // Game loop
+        function gameLoop() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw player
+            ctx.fillStyle = 'lime';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+
+            // Move player
+            if (keys['ArrowLeft'] && player.x > 0) {
+                player.x -= player.speed;
+            }
+            if (keys['ArrowRight'] && player.x < canvas.width - player.width) {
+                player.x += player.speed;
+            }
+
+            // Shoot bullets
+            if (keys['Space'] && !player.isShooting) {
+                player.bullets.push({ x: player.x + player.width / 2 - 2.5, y: player.y, width: 5, height: 10 });
+                player.isShooting = true;
+            }
+            if (!keys['Space']) {
+                player.isShooting = false;
+            }
+
+            // Move bullets
+            for (let i = 0; i < player.bullets.length; i++) {
+                const bullet = player.bullets[i];
+                bullet.y -= bulletSpeed;
+                ctx.fillStyle = 'red';
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+
+                // Remove bullets that go off screen
+                if (bullet.y < 0) {
+                    player.bullets.splice(i, 1);
+                    i--;
+                }
+            }
+
+            // Spawn enemies
+            if (Math.random() < 0.02) {
+                enemies.push({ x: Math.random() * (canvas.width - 30), y: 0, width: 30, height: 30 });
+            }
+
+            // Move enemies
+            for (let i = 0; i < enemies.length; i++) {
+                const enemy = enemies[i];
+                enemy.y += enemySpeed;
+                ctx.fillStyle = 'blue';
+                ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+
+                // Check if enemies go off screen
+                if (enemy.y > canvas.height) {
+                    enemies.splice(i, 1);
+                    i--;
+                }
+            }
+
+            // Bullet-enemy collision
+            for (let i = 0; i < player.bullets.length; i++) {
+                const bullet = player.bullets[i];
+                for (let j = 0; j < enemies.length; j++) {
+                    const enemy = enemies[j];
+                    if (bullet.x < enemy.x + enemy.width &&
+                        bullet.x + bullet.width > enemy.x &&
+                        bullet.y < enemy.y + enemy.height &&
+                        bullet.y + bullet.height > enemy.y) {
+                        // Remove bullet and enemy on collision
+                        player.bullets.splice(i, 1);
+                        enemies.splice(j, 1);
+                        i--;
+                        break;
+                    }
+                }
+            }
+
+            // Loop game
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start game loop
+        gameLoop();
+    </script>
+</body>
+</html>
